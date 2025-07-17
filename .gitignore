@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+db.sqlite3
+.env
+*.egg-info/
+*.pyo
+
+# Django Migrations (optional)
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Virtualenv
+venv/
+env/
+ENV/
+.VENV/
+
+# Node.js / React / Flutter
+node_modules/
+.build/
+build/
+*.lock
+*.flutter-plugins
+*.dart_tool/
+.pub-cache/
+
+# System
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/

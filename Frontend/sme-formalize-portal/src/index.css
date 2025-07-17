@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Base Colors - Light Theme */
+    --background: 47 56% 95%;       /* Warm, parchment-like base (soft yellowish) */
+    --foreground: 210 10% 15%;      /* Deep charcoal */
+
+    /* Card & Popover */
+    --card: 0 0% 100%;
+    --card-foreground: 210 10% 15%;
+
+    /* Primary - Rich green (Zimbabwe flag green) */
+    --primary: 120 40% 35%;         /* Government green */
+    --primary-foreground: 0 0% 98%;
+
+    /* Secondary - Gold/yellow (Zimbabwe flag gold) */
+    --secondary: 45 85% 60%;        /* Warm gold for accents */
+    --secondary-foreground: 210 10% 15%;
+
+    /* Muted - light greyish gold */
+    --muted: 45 25% 85%;
+    --muted-foreground: 210 10% 35%;
+
+    /* Accent - Soft red for touches */
+    --accent: 0 60% 55%;            /* Zimbabwe flag red, used lightly */
+    --accent-foreground: 0 0% 98%;
+
+    /* Destructive */
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Borders & Inputs */
+    --border: 47 20% 80%;
+    --input: 47 25% 90%;
+    --ring: 120 40% 35%;
+
+    /* Status */
+    --success: 140 70% 35%;
+    --success-foreground: 0 0% 98%;
+    --warning: 35 85% 55%;
+    --warning-foreground: 0 0% 98%;
+    --info: 205 90% 45%;
+    --info-foreground: 0 0% 98%;
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 10% 20%;
+    --sidebar-primary: 120 40% 35%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 47 20% 90%;
+    --sidebar-accent-foreground: 210 10% 25%;
+    --sidebar-border: 47 20% 80%;
+    --sidebar-ring: 120 40% 35%;
+  }
+
+  .dark {
+    --background: 210 15% 10%;
+    --foreground: 45 20% 90%;
+
+    --card: 210 15% 18%;
+    --card-foreground: 45 20% 90%;
+
+    --primary: 120 40% 45%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 45 85% 50%;
+    --secondary-foreground: 210 15% 15%;
+
+    --muted: 47 15% 30%;
+    --muted-foreground: 47 10% 65%;
+
+    --accent: 0 65% 50%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 47 15% 25%;
+    --input: 47 15% 20%;
+    --ring: 120 40% 45%;
+
+    --success: 140 70% 35%;
+    --success-foreground: 0 0% 98%;
+    --warning: 35 85% 55%;
+    --warning-foreground: 0 0% 98%;
+    --info: 205 90% 45%;
+    --info-foreground: 0 0% 98%;
+
+    --sidebar-background: 210 15% 15%;
+    --sidebar-foreground: 47 20% 90%;
+    --sidebar-primary: 120 40% 40%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 47 15% 25%;
+    --sidebar-accent-foreground: 47 20% 90%;
+    --sidebar-border: 47 15% 30%;
+    --sidebar-ring: 120 40% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
