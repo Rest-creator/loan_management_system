@@ -1,36 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ApplicationCard } from '@/components/ApplicationCard';
-import { applications } from '@/data/mockData';
-import { Search, Filter, Eye, Phone, Calendar } from 'lucide-react';
+import { applications } from '@/data/mockData'; // Ensure this mock data is updated
+import { Search, Filter, Eye, Phone, Calendar, Landmark, Hash, Loader2 } from 'lucide-react'; // Added Landmark for ZIMRA, Hash for TIN, Loader2
 import { StatusBadge } from '@/components/StatusBadge';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/constants/AuthContext'; // Import useAuth hook
 
 export default function Applications() {
+  const { user, isLoading: isAuthLoading } = useAuth(); // Get user and authentication loading state
+  const navigate = useNavigate();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
+  // Effect to redirect if user is not authenticated
+  useEffect(() => {
+    if (!isAuthLoading && user === null) {
+      console.log("User is null and not loading, navigating to /");
+      navigate('/');
+    }
+  }, [user, isAuthLoading, navigate]);
+
+  // Determine if the logged-in user is a ZIMRA officer
+  const isZimraOfficer = user?.officeId === 'zimra';
+
   const filteredApplications = applications.filter(app => {
-    const matchesSearch = 
+    const matchesSearch =
       app.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      app.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (isZimraOfficer && app.tin && app.tin.toLowerCase().includes(searchTerm.toLowerCase())); // Search TIN for ZIMRA officers
+
     const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        <Loader2 className="animate-spin h-8 w-8 mr-2" /> Loading User Data...
+      </div>
+    );
+  }
+
+  if (user === null) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        You are not logged in. Redirecting...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Applications</h1>
-        <p className="text-muted-foreground">Manage and review business formalization applications</p>
+        <h1 className="text-3xl font-bold text-foreground">
+          {isZimraOfficer ? 'Tax Identification Number (TIN) Applications' : 'Business Formalization Applications'}
+        </h1>
+        <p className="text-muted-foreground">
+          {isZimraOfficer
+            ? 'Review and process applications for Tax Identification Numbers.'
+            : 'Manage and review business formalization applications.'}
+        </p>
       </div>
 
       {/* Filters */}
@@ -40,18 +78,18 @@ export default function Applications() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, business, or application ID..."
+                placeholder={isZimraOfficer ? "Search by applicant, business, application ID, or TIN..." : "Search by name, business, or application ID..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='bg-white'>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
@@ -84,7 +122,8 @@ export default function Applications() {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredApplications.map(app => (
-            <ApplicationCard key={app.id} application={app} />
+            // You might want a different ApplicationCard for ZIMRA, or pass isZimraOfficer prop
+            <ApplicationCard key={app.id} application={app} isZimraView={isZimraOfficer} />
           ))}
         </div>
       ) : (
@@ -98,6 +137,7 @@ export default function Applications() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 font-medium">Application ID</th>
+                    {isZimraOfficer && <th className="text-left py-3 px-4 font-medium">TIN</th>} {/* New column for ZIMRA */}
                     <th className="text-left py-3 px-4 font-medium">Applicant</th>
                     <th className="text-left py-3 px-4 font-medium">Business Name</th>
                     <th className="text-left py-3 px-4 font-medium">Contact</th>
@@ -113,6 +153,20 @@ export default function Applications() {
                       <td className="py-3 px-4">
                         <span className="font-mono text-sm">{app.id}</span>
                       </td>
+                      {isZimraOfficer && ( // Display TIN for ZIMRA officers
+                        <td className="py-3 px-4">
+                          <div className="flex items-center text-sm">
+                            {app.tin ? (
+                                <>
+                                    <Hash className="h-3 w-3 mr-1" />
+                                    {app.tin}
+                                </>
+                            ) : (
+                                <span className="text-muted-foreground">Not assigned</span>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td className="py-3 px-4">{app.applicantName}</td>
                       <td className="py-3 px-4">{app.businessName}</td>
                       <td className="py-3 px-4">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,15 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { currentOfficer, offices } from '@/data/mockData';
-import { User, Bell, Shield, Save } from 'lucide-react';
+import { offices } from '@/data/mockData'; // Assuming 'offices' array is still needed for the dropdown
+import { User, Bell, Shield, Save, Loader2 } from 'lucide-react'; // Added Loader2 for loading state
+import { useAuth } from '../components/constants/AuthContext'; // Import useAuth hook
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
 
 export default function Settings() {
+  const { user, isLoading: isAuthLoading } = useAuth(); // Get user and authentication loading state
+  const navigate = useNavigate();
+
+  // Initialize state based on user data
   const [profile, setProfile] = useState({
-    name: currentOfficer.name,
-    email: currentOfficer.email,
-    office: currentOfficer.officeId,
-    role: currentOfficer.role
+    name: '',
+    email: '',
+    office: '',
+    role: ''
   });
 
   const [notifications, setNotifications] = useState({
@@ -24,13 +30,64 @@ export default function Settings() {
     applicationUpdates: true
   });
 
+  // --- Effect to initialize profile state when user data is available ---
+  useEffect(() => {
+    if (!isAuthLoading && user) {
+      setProfile({
+        // Assuming your user object has these properties
+        name: user.full_name || user.first_name + ' ' + user.last_name || '',
+        email: user.email || '',
+        office: user.office_id || '', // Use office_id for consistency with data
+        role: user.role || ''
+      });
+      // You might also fetch saved notification preferences here
+    }
+  }, [user, isAuthLoading]); // Re-run when user or auth loading state changes
+
+  // --- Effect to redirect if user is not authenticated ---
+  useEffect(() => {
+    if (!isAuthLoading && user === null) {
+      console.log("User is null and not loading, navigating to /");
+      navigate('/');
+    }
+  }, [user, isAuthLoading, navigate]);
+
   const handleSaveProfile = () => {
     console.log('Saving profile:', profile);
+    // TODO: Implement API call to update user profile
+    alert('Profile saved! (This is a mock action)');
   };
 
   const handleSaveNotifications = () => {
     console.log('Saving notifications:', notifications);
+    // TODO: Implement API call to update notification preferences
+    alert('Notification preferences saved! (This is a mock action)');
   };
+
+  // --- Render loading state or redirect message ---
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        <Loader2 className="animate-spin h-8 w-8 mr-2" /> Loading User Data...
+      </div>
+    );
+  }
+
+  if (user === null) {
+    // This case should primarily be handled by the useEffect redirect.
+    // This fallback ensures nothing breaks if the redirect is delayed or fails.
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        You are not logged in. Redirecting...
+      </div>
+    );
+  }
+
+  // At this point, 'user' is guaranteed to be an object.
+  const userRole = user.role;
+  const userFullName = user.full_name || user.first_name + ' ' + user.last_name;
+  const avatarFallbackText = userFullName.split(' ').map(n => n[0]).join('') || user.email[0]?.toUpperCase() || 'U';
+
 
   return (
     <div className="space-y-6">
@@ -53,12 +110,9 @@ export default function Settings() {
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
                 <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                  {profile.name.split(' ').map(n => n[0]).join('')}
+                  {avatarFallbackText}
                 </AvatarFallback>
               </Avatar>
-              <Button variant="outline" size="sm">
-                Change Photo
-              </Button>
             </div>
 
             <div className="space-y-2">
@@ -77,37 +131,57 @@ export default function Settings() {
                 type="email"
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                readOnly // Email is often not editable
               />
             </div>
 
+            {/* Office field only editable if role is admin for flexibility, otherwise display as read-only text */}
             <div className="space-y-2">
               <Label htmlFor="office">Office</Label>
-              <Select value={profile.office} onValueChange={(value) => setProfile({ ...profile, office: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {offices.map((office) => (
-                    <SelectItem key={office.id} value={office.id}>
-                      {office.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {userRole === 'admin' ? (
+                <Select value={profile.office} onValueChange={(value) => setProfile({ ...profile, office: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an office" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {offices.map((office) => (
+                      <SelectItem key={office.id} value={office.id}>
+                        {office.fullName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                // Display current office name if not admin, map ID to full name
+                <Input
+                  id="office-display"
+                  value={offices.find(o => o.id === profile.office)?.fullName || "N/A"}
+                  readOnly
+                />
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={profile.role} onValueChange={(value) => setProfile({ ...profile, role: value as any })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="officer">Officer</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                </SelectContent>
-              </Select>
+              {userRole === 'admin' ? (
+                <Select value={profile.role} onValueChange={(value) => setProfile({ ...profile, role: value as any })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="officer">Officer</SelectItem>
+                    <SelectItem value="supervisor">Supervisor</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                // Display current role as read-only text if not admin
+                <Input
+                  id="role-display"
+                  value={profile.role.charAt(0).toUpperCase() + profile.role.slice(1)} // Capitalize first letter
+                  readOnly
+                />
+              )}
             </div>
 
             <Button onClick={handleSaveProfile} className="w-full">
@@ -135,7 +209,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={notifications.emailAlerts}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setNotifications({ ...notifications, emailAlerts: checked })
                 }
               />
@@ -150,7 +224,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={notifications.pushNotifications}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setNotifications({ ...notifications, pushNotifications: checked })
                 }
               />
@@ -165,7 +239,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={notifications.weeklyReports}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setNotifications({ ...notifications, weeklyReports: checked })
                 }
               />
@@ -180,7 +254,7 @@ export default function Settings() {
               </div>
               <Switch
                 checked={notifications.applicationUpdates}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setNotifications({ ...notifications, applicationUpdates: checked })
                 }
               />
@@ -233,7 +307,7 @@ export default function Settings() {
         </Card>
 
         {/* System Settings (Admin Only) */}
-        {currentOfficer.role === 'admin' && (
+        {userRole === 'admin' && ( // Use userRole from the context
           <Card>
             <CardHeader>
               <CardTitle>System Settings</CardTitle>

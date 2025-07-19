@@ -11,6 +11,8 @@ export interface Application {
   businessType: string;
   location: string;
   description: string;
+  tin: string;
+  comments: [];
 }
 
 export interface Document {

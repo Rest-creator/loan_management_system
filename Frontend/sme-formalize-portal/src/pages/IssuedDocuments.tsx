@@ -78,7 +78,7 @@ export default function IssuedDocuments() {
               <SelectTrigger className="w-full md:w-[250px]">
                 <SelectValue placeholder="Filter by document type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='bg-white'>
                 <SelectItem value="all">All Document Types</SelectItem>
                 <SelectItem value="business_registration">Business Registration</SelectItem>
                 <SelectItem value="tax_clearance">Tax Clearance</SelectItem>

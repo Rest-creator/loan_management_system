@@ -66,21 +66,27 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 # This is the UserSerializer for LISTING users
 class UserSerializer(serializers.ModelSerializer):
-    # Use SerializerMethodField for full_name as it's a calculated property
     full_name = serializers.SerializerMethodField()
-    # If 'office' is a ForeignKey to an 'Office' model, you can serialize its name directly
-    # or nest the entire Office object if your frontend expects it.
-    # Frontend expects 'office: string', so getting the name is best.
-    office = serializers.CharField(source='office.name', read_only=True)
+    
+    office_display = serializers.CharField(source='get_office_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'first_name', 'last_name', 'email', 'full_name',
-            'phone', 'office', 'reason', 'date_joined', 'status'
+            'phone', 'office', 'office_display', 'reason', 'date_joined',
+            'status', 'status_display', 'role' # Include new fields
         ]
-        # read_only_fields = ['id', 'email', 'full_name', 'date_joined', 'status']
     
     def get_full_name(self, obj):
         # Access the first_name and last_name from the User instance
         return f"{obj.first_name} {obj.last_name}"
+
+    def get_role(self, obj):
+        if obj.is_superuser:
+            return 'admin'
+        elif obj.is_staff: 
+            return 'officer'
+        return 'user'

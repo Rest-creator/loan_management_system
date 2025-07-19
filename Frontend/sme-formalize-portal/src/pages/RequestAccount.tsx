@@ -1,41 +1,56 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import RequestAccountForm from './RequestAccountForm';
-import RequestAccountSuccess from './RequestAccountSuccess';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Shield } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import RequestAccountForm from "./RequestAccountForm";
+import RequestAccountSuccess from "./RequestAccountSuccess";
 import coat_of_arms from "../../assets/coat_of_arms.png"; // Adjust path as needed
-import API_ENDPOINTS from '@/components/constants/apiEndpoints';
+import API_ENDPOINTS from "@/components/constants/apiEndpoints";
 
 const offices = [
-  { id: 'zimra', name: 'ZIMRA' },
-  { id: 'harare_council', name: 'Harare City Council' },
-  { id: 'chitungwiza_minucipal', name: 'Chitungwiza Municipal' },
-  { id: 'ministry_smes', name: 'Ministry of Women Affairs, Community, Small and Medium Enterprises Development' },
+  { id: "zimra", name: "ZIMRA" },
+  { id: "harare_council", name: "Harare City Council" },
+  { id: "chitungwiza_minucipal", name: "Chitungwiza Municipal" },
+  {
+    id: "ministry_smes",
+    name: "Ministry of Women Affairs, Community, Small and Medium Enterprises Development",
+  },
 ];
 
 export default function RequestAccount() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1); // New state for steps
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    office: '',
-    reason: '',
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    office: "",
+    reason: "",
   });
 
   const handleNextStep = () => {
     // Basic validation before moving to the next step
     if (currentStep === 1) {
-      if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword || !formData.phone) {
+      if (
+        !formData.fullName ||
+        !formData.email ||
+        !formData.password ||
+        !formData.confirmPassword ||
+        !formData.phone
+      ) {
         toast({
           title: "Validation Error",
           description: "Please fill in all personal details to proceed.",
@@ -66,16 +81,17 @@ export default function RequestAccount() {
     if (!formData.office || !formData.reason) {
       toast({
         title: "Validation Error",
-        description: "Please select your office and provide a reason for access.",
+        description:
+          "Please select your office and provide a reason for access.",
         variant: "destructive",
       });
       return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
-    const [firstName, ...lastNameParts] = formData.fullName.split(' ');
-    const lastName = lastNameParts.join(' ');
+    const [firstName, ...lastNameParts] = formData.fullName.split(" ");
+    const lastName = lastNameParts.join(" ");
 
     const dataToSend = {
       email: formData.email,
@@ -86,15 +102,15 @@ export default function RequestAccount() {
       office: formData.office,
       reason: formData.reason,
       first_name: firstName,
-      last_name: lastName || '',
+      last_name: lastName || "",
     };
 
     try {
       // Use the imported API_ENDPOINTS for the URL
       const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(dataToSend),
       });
@@ -104,11 +120,11 @@ export default function RequestAccount() {
         console.error("Registration error:", errorData);
         let errorMessage = "An unexpected error occurred. Please try again.";
         if (errorData) {
-            if (typeof errorData === 'object') {
-                errorMessage = Object.values(errorData).flat().join(' '); // Join all error messages
-            } else if (typeof errorData === 'string') {
-                errorMessage = errorData;
-            }
+          if (typeof errorData === "object") {
+            errorMessage = Object.values(errorData).flat().join(" "); // Join all error messages
+          } else if (typeof errorData === "string") {
+            errorMessage = errorData;
+          }
         }
 
         toast({
@@ -125,34 +141,35 @@ export default function RequestAccount() {
       setIsSubmitted(true);
       toast({
         title: "Request Submitted",
-        description: "Your account request has been submitted for review. Please check your email for confirmation (if email is set up).",
+        description:
+          "Your account request has been submitted for review. Please check your email for confirmation (if email is set up).",
       });
-
     } catch (error) {
       console.error("Network or unexpected error during registration:", error);
       toast({
         title: "Network Error",
-        description: "Could not connect to the server. Please check your internet connection or try again later.",
+        description:
+          "Could not connect to the server. Please check your internet connection or try again later.",
         variant: "destructive",
       });
     }
-    setLoading(false)
+    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       {/* Branding Header */}
       <div className="text-center mb-8">
-       <div className="flex items-center justify-center space-x-2 mb-1">
-            <img src={coat_of_arms} />
-            {/* <img src={smepulse_logo}/> */}
-          </div>
+        <div className="flex items-center justify-center space-x-2 mb-1">
+          <img src={coat_of_arms} className="h-24" alt="Coat of Arms" />{" "}
+          {/* Added alt text */}
+        </div>
         <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1 font-bold">
           Republic of Zimbabwe
         </p>
         <p className="text-muted-foreground ">
-          <h1 className="font-bold text-primary">SMEPULSE</h1>Government
-          Officer Portal
+          <h1 className="font-bold text-primary">SMEPULSE</h1>Government Officer
+          Portal
         </p>
       </div>
 
@@ -163,7 +180,8 @@ export default function RequestAccount() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Request Officer Account</CardTitle>
             <CardDescription>
-              Step {currentStep} of 2 - Apply for access to the SMEPulse government portal
+              Step {currentStep} of 2 - Apply for access to the SMEPulse
+              government portal
             </CardDescription>
           </CardHeader>
           <CardContent>

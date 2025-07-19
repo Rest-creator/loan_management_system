@@ -1,14 +1,20 @@
+import { useEffect, useState } from 'react'; // Import useEffect and useState
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { officers, offices } from '@/data/mockData';
-import { Users, Mail, Building2, Shield } from 'lucide-react';
+// import { officers, offices } from '@/data/mockData'; // Remove mock data imports
+import { Users, Mail, Building2, Shield, Loader2 } from 'lucide-react'; // Add Loader2
+import { useAuth } from '../components/constants/AuthContext'; // Import useAuth
+import API_ENDPOINTS from '@/components/constants/apiEndpoints'; // Assuming you have this
 
 export default function Officers() {
-  const getOfficeDetails = (officeId: string) => {
-    return offices.find(office => office.id === officeId);
-  };
+  const { authAxios } = useAuth(); // Get authAxios from AuthContext
+  const [officers, setOfficers] = useState([]);
+  const [offices, setOffices] = useState([]); // State for offices (if fetching dynamically)
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Function to get role badge color (remains the same)
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
@@ -21,6 +27,57 @@ export default function Officers() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  useEffect(() => {
+    const fetchOfficersAndOffices = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch officers
+        const officersResponse = await authAxios.get(API_ENDPOINTS.OFFICERS.LIST); 
+        setOfficers(officersResponse.data);
+        const officesResponse = await authAxios.get(API_ENDPOINTS.OFFICES.LIST); // Assuming API_ENDPOINTS.OFFICES.LIST points to /api/offices/
+        setOffices(officesResponse.data);
+
+      } catch (err) {
+        console.error("Failed to fetch officers or offices:", err);
+        setError("Failed to load data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOfficersAndOffices();
+  }, [authAxios]); // Rerun effect if authAxios (which depends on authToken) changes
+
+  // Helper to find office details from the fetched offices array
+  const getOfficeDetails = (officeId: string) => {
+    // This will now use the offices fetched from the backend
+    return offices.find(office => office.id === officeId);
+  };
+
+  // Calculate stats dynamically from fetched officers
+  const totalOfficers = officers.length;
+  const totalOffices = offices.length; // Or just offices.length if only displaying unique ones
+  const totalAdmins = officers.filter(o => o.role === 'admin').length;
+
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">
+        <Loader2 className="animate-spin h-8 w-8 mr-2" /> Loading Officers...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-destructive">
+        <p className="text-lg mb-2">Error: {error}</p>
+        <p className="text-sm">Please ensure you have the necessary permissions and try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -38,7 +95,7 @@ export default function Officers() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{officers.length}</div>
+            <div className="text-2xl font-bold">{totalOfficers}</div>
           </CardContent>
         </Card>
 
@@ -48,7 +105,7 @@ export default function Officers() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{offices.length}</div>
+            <div className="text-2xl font-bold">{totalOffices}</div>
           </CardContent>
         </Card>
 
@@ -58,9 +115,7 @@ export default function Officers() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {officers.filter(o => o.role === 'admin').length}
-            </div>
+            <div className="text-2xl font-bold">{totalAdmins}</div>
           </CardContent>
         </Card>
       </div>
@@ -68,20 +123,27 @@ export default function Officers() {
       {/* Officers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {officers.map(officer => {
-          const office = getOfficeDetails(officer.officeId);
+          // Now use officer.office_name directly from backend, or lookup via office_id
+          // Since your frontend expects `office.name` and `office.fullName` on the office object,
+          // and the backend now provides `office_name` and `office_id`, we can adjust.
+          // Option 1: Use `officer.office_name` directly for the main display
+          // Option 2: If you fetched `offices` dynamically, find the full details:
+          const officeData = getOfficeDetails(officer.office_id); // Find full office object if fetched
+
           return (
             <Card key={officer.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {officer.name.split(' ').map(n => n[0]).join('')}
+                      {/* Ensure officer.first_name and officer.last_name are available */}
+                      {officer.first_name?.[0]}{officer.last_name?.[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{officer.name}</h3>
-                    <Badge 
-                      variant="secondary" 
+                    <h3 className="font-semibold text-foreground">{officer.full_name}</h3>
+                    <Badge
+                      variant="secondary"
                       className={getRoleBadgeColor(officer.role)}
                     >
                       {officer.role.charAt(0).toUpperCase() + officer.role.slice(1)}
@@ -99,12 +161,16 @@ export default function Officers() {
                   
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Building2 className="h-4 w-4 mr-2" />
-                    {office?.name}
+                    {/* Use office_name from the backend */}
+                    {officer.office_name || 'N/A'} 
                   </div>
                   
                   <div className="pt-2">
                     <p className="text-xs text-muted-foreground">
-                      {office?.fullName}
+                      {/* If you need 'fullName' for offices, your Django Office model or serializer
+                          would need to provide it (e.g., officeData?.description or a dedicated field).
+                          For now, it will be blank if not provided by backend. */}
+                      {officeData?.fullName || officer.office_name} {/* Fallback for full name if not in officeData */}
                     </p>
                   </div>
                 </div>
@@ -133,17 +199,17 @@ export default function Officers() {
               </thead>
               <tbody>
                 {officers.map(officer => {
-                  const office = getOfficeDetails(officer.officeId);
+                  const officeData = getOfficeDetails(officer.office_id); // Find full office object if fetched
                   return (
                     <tr key={officer.id} className="border-b border-border hover:bg-accent/50">
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback className="text-sm">
-                              {officer.name.split(' ').map(n => n[0]).join('')}
+                              {officer.first_name?.[0]}{officer.last_name?.[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{officer.name}</span>
+                          <span className="font-medium">{officer.full_name}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -154,21 +220,24 @@ export default function Officers() {
                       </td>
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium">{office?.name}</p>
-                          <p className="text-xs text-muted-foreground">{office?.fullName}</p>
+                          <p className="font-medium">{officer.office_name || 'N/A'}</p>
+                          <p className="text-xs text-muted-foreground">
+                             {officeData?.fullName || ''} {/* Leave blank if no full name from backend */}
+                          </p>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <Badge 
-                          variant="secondary" 
+                        <Badge
+                          variant="secondary"
                           className={getRoleBadgeColor(officer.role)}
                         >
                           {officer.role.charAt(0).toUpperCase() + officer.role.slice(1)}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
-                        <Badge variant="outline" className="bg-green-100 text-green-800">
-                          Active
+                        {/* Use officer.status_display from the backend */}
+                        <Badge variant="outline" className={officer.status === 'approved' ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"}>
+                          {officer.status_display || 'N/A'}
                         </Badge>
                       </td>
                     </tr>

@@ -15,6 +15,7 @@ import Settings from "./pages/Settings";
 import RequestAccount from "./pages/RequestAccount";
 import OfficerRequests from "./pages/admin/OfficerRequests";
 import NotFound from "./pages/NotFound";
+import { AuthProvider } from "./components/constants/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -24,28 +25,30 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Public Routes: no layout */}
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/request-account" element={<RequestAccount />} />
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes: no layout */}
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/request-account" element={<RequestAccount />} />
 
-          {/* Protected Routes: use Layout */}
-          <Route path="/" element={<Layout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="applications" element={<Applications />} />
-            <Route path="applications/:id" element={<ApplicationDetail />} />
-            <Route path="offices/:officeId" element={<OfficeDetail />} />
-            <Route path="issued-documents" element={<IssuedDocuments />} />
-            <Route path="officers" element={<Officers />} />
-            <Route
-              path="admin/officer-requests"
-              element={<OfficerRequests />}
-            />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
+            {/* Protected Routes: use Layout */}
+            <Route path="/" element={<Layout />}>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="applications" element={<Applications />} />
+              <Route path="applications/:id" element={<ApplicationDetail />} />
+              <Route path="offices/:officeId" element={<OfficeDetail />} />
+              <Route path="issued-documents" element={<IssuedDocuments />} />
+              <Route path="officers" element={<Officers />} />
+              <Route
+                path="admin/officer-requests"
+                element={<OfficerRequests />}
+              />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

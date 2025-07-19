@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'corsheaders',  # Add corsheaders
     'smepulse_api',
     'channels',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [

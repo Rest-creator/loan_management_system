@@ -37,7 +37,12 @@ class User(AbstractUser):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
     ]
-    
+      # Add a role field
+    ROLE_CHOICES = [
+        ('user', 'Regular User'),
+        ('officer', 'Officer'),
+        ('admin', 'Administrator'),
+    ]
     username = None  # <--- Important: remove username
     email = models.EmailField(unique=True)
 
@@ -57,7 +62,35 @@ class User(AbstractUser):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     
     objects = CustomUserManager()
+    
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user') # Add this line
 
     def __str__(self):
         return f"{self.get_full_name()} ({self.email}) - {self.get_status_display()}"
     
+
+
+class Application(models.Model):
+    # Example fields, adjust as per your actual application data
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('needs_clarification', 'Needs Clarification'),
+        # Add other statuses as needed
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    # Foreign key to Office
+    office = models.ForeignKey(Office, on_delete=models.CASCADE, related_name='applications')
+    # Optional: Link to a user if applications are submitted by users
+    submitted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='submitted_applications')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.get_status_display()} ({self.office.name})"
+
+

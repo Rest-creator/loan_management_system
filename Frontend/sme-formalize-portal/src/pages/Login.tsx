@@ -1,3 +1,4 @@
+// src/pages/Login.jsx (or wherever your Login component is located)
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,83 +11,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { offices } from "@/data/mockData";
+// Removed: import { offices } from "@/data/mockData"; // Not used in this version of Login
 import { useNavigate } from "react-router-dom";
 import coat_of_arms from "../../assets/coat_of_arms.png";
-import API_ENDPOINTS from "@/components/constants/apiEndpoints";
+// Removed: import API_ENDPOINTS from "@/components/constants/apiEndpoints"; // Use AuthContext for API calls
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "../components/constants/AuthContext"; // Import useAuth hook
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedOffice, setSelectedOffice] = useState("");
+  const [selectedOffice, setSelectedOffice] = useState(""); // Still present but not used for login payload
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
   const { toast } = useToast();
+  const { login: authLogin } = useAuth(); // Destructure 'login' from useAuth and rename it to 'authLogin' to avoid conflict
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      email: email,
-      password: password,
-    };
-
-
     try {
-      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-console.log(response);
+      // Use the login function from AuthContext
+      const success = await authLogin(email, password);
 
-      // If login failed
-      if (!response.ok) {
-        const errorData = await response.json();
-        let errorMessage = "An unexpected error occurred. Please try again.";
-        console.log(errorData);
-        
-
-        if (typeof errorData === "object") {
-          errorMessage = Object.values(errorData).flat().join(" ");
-        } else if (typeof errorData === "string") {
-          errorMessage = errorData;
-        }
-
+      if (success) {
+        toast({
+          title: "Login Successful",
+          description: "Redirecting you to your dashboard...",
+        });
+        navigate("/dashboard");
+      } else {
+        // authLogin would typically throw an error if unsuccessful,
+        // so this 'else' block might not be reached if the catch handles it.
+        // However, if authLogin returns false on failure, this would trigger.
         toast({
           title: "Login Failed",
-          description: errorMessage,
+          description: "Invalid credentials. Please try again.",
           variant: "destructive",
         });
+      }
+    } catch (error: any) { // Use 'any' for now or define a more specific error type
+      console.error("Login attempt failed:", error);
+      // AuthContext's login function is designed to throw the error from the API call.
+      // We can inspect the error to provide a more specific message.
+      let errorMessage = "An unexpected error occurred. Please try again.";
 
-        return;
+      // Assuming API errors might be nested or have a 'detail' field
+      if (error.response?.data) {
+        if (typeof error.response.data === "object") {
+          // Flatten error messages from DRF
+          errorMessage = Object.values(error.response.data).flat().join(" ");
+        } else if (typeof error.response.data === "string") {
+          errorMessage = error.response.data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
-      // If login succeeded
-      const responseData = await response.json();
-      console.log(responseData);
-      
-      localStorage.setItem("access_token", responseData.access);
-      localStorage.setItem("refresh_token", responseData.refresh);
-
       toast({
-        title: "Login Successful",
-        description: "Redirecting you to your dashboard...",
-      });
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Network or unexpected error during login:", error);
-      toast({
-        title: "Network Error",
-        description:
-          "Could not connect to the server. Please check your internet connection or try again later.",
+        title: "Login Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -99,9 +85,7 @@ console.log(response);
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-1">
-            {/* <Building2 className="h-10 w-10 text-primary" /> */}
-            <img src={coat_of_arms} />
-            {/* <img src={smepulse_logo}/> */}
+            <img src={coat_of_arms} className="h-24" alt="Coat of Arms" /> {/* Added alt text */}
           </div>
           <p className="text-sm text-muted-foreground uppercase tracking-wide mb-1 font-bold">
             Republic of Zimbabwe
@@ -141,13 +125,16 @@ console.log(response);
                 />
               </div>
 
+            
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="animate-spin" />{" "}
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    Signing In...
                   </>
                 ) : (
-                  <p>Sign In</p>
+                  "Sign In"
                 )}
               </Button>
             </form>
